@@ -1,0 +1,11 @@
+{
+  "name": "ani-ss",
+  "version": "0.0.1",
+  "description": "super sampling for the web",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "pinnouse (nicholas wong)",
+  "license": "MIT"
+}
