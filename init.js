@@ -26,7 +26,6 @@ window.onload = function() {
     scaler = wasm.Scaler.new(gl)
 
     function render() {
-        return
         if (scaler) {
             scaler.bold = bold
             scaler.blur = blur
@@ -63,7 +62,6 @@ function changeImage(src) {
     inputImg.onload = function() {
         scaler.input_image(inputImg)
         scaler.resize(scale)
-        scaler.test(inputImg)
     }
     inputImg.onerror = function() {
         alert("Can't load the image.")

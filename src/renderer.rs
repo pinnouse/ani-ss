@@ -141,7 +141,7 @@ impl Scaler {
         let gl: &WebGlRenderingContext = &self.gl;
 
         if self.i_v.is_some() {
-            update_texture(gl, &self.i_t, self.i_v.as_ref().unwrap());
+            update_texture(gl, self.i_t.as_ref(), self.i_v.as_ref().unwrap());
         }
 
         gl.disable(GL::DEPTH_TEST);
@@ -155,21 +155,21 @@ impl Scaler {
         );
 
         // Bicubic interpolation upscale
-        bind_fb(gl, &self.framebuffer, &self.scale_tex);
+        bind_fb(gl, self.framebuffer.as_ref(), self.scale_tex.as_ref());
 
         gl.use_program(self.scale_prog.program.as_ref());
-        bind_attribute(gl, &self.quad_buffer, self.scale_prog.attributes["a_pos"], 2);
-        bind_tex(gl, &self.i_t, 0);
+        bind_attribute(gl, self.quad_buffer.as_ref(), self.scale_prog.attributes["a_pos"], 2);
+        bind_tex(gl, self.i_t.as_ref(), 0);
         gl.uniform1i(self.scale_prog.uniforms.get("u_texture"), 0);
         gl.uniform2f(self.scale_prog.uniforms.get("u_size"), self.i_w as f32, self.i_h as f32);
         gl.draw_arrays(GL::TRIANGLES, 0, 6);
 
         // Scaled: scaleTexture
 
-        bind_fb(gl, &self.framebuffer, &self.temp_tex[0]);
+        bind_fb(gl, self.framebuffer.as_ref(), self.temp_tex[0].as_ref());
         gl.use_program(self.lum_prog.program.as_ref());
-        bind_attribute(gl, &self.quad_buffer, self.lum_prog.attributes["a_pos"], 2);
-        bind_tex(gl, &self.scale_tex, 0);
+        bind_attribute(gl, self.quad_buffer.as_ref(), self.lum_prog.attributes["a_pos"], 2);
+        bind_tex(gl, self.scale_tex.as_ref(), 0);
         gl.uniform1i(self.lum_prog.uniforms.get("u_texture"), 0);
 
         gl.draw_arrays(GL::TRIANGLES, 0, 6);
@@ -177,11 +177,11 @@ impl Scaler {
         // Scaled: scaleTexture
         // PostKernel: tempTexture
 
-        bind_fb(gl, &self.framebuffer, &self.temp_tex[1]);
+        bind_fb(gl, self.framebuffer.as_ref(), self.temp_tex[1].as_ref());
         gl.use_program(self.push_prog.program.as_ref());
-        bind_attribute(gl, &self.quad_buffer, self.push_prog.attributes["a_pos"], 2);
-        bind_tex(gl, &self.scale_tex, 0);
-        bind_tex(gl, &self.temp_tex[0], 1);
+        bind_attribute(gl, self.quad_buffer.as_ref(), self.push_prog.attributes["a_pos"], 2);
+        bind_tex(gl, self.scale_tex.as_ref(), 0);
+        bind_tex(gl, self.temp_tex[0].as_ref(), 1);
         gl.uniform1i(self.push_prog.uniforms.get("u_texture"), 0);
         gl.uniform1i(self.push_prog.uniforms.get("u_textureTemp"), 1);
         gl.uniform1f(
@@ -201,10 +201,10 @@ impl Scaler {
         // Scaled: tempTexture2
         // PostKernel: tempTexture
 
-        bind_fb(gl, &self.framebuffer, &self.temp_tex[0]);
+        bind_fb(gl, self.framebuffer.as_ref(), self.temp_tex[0].as_ref());
         gl.use_program(self.lum_prog.program.as_ref());
-        bind_attribute(gl, &self.quad_buffer, self.lum_prog.attributes["a_pos"], 2);
-        bind_tex(gl, &self.temp_tex[1], 0);
+        bind_attribute(gl,self.quad_buffer.as_ref(), self.lum_prog.attributes["a_pos"], 2);
+        bind_tex(gl, self.temp_tex[1].as_ref(), 0);
         gl.uniform1i(self.lum_prog.uniforms.get("u_texture"), 0);
 
         gl.draw_arrays(GL::TRIANGLES, 0, 6);
@@ -212,11 +212,11 @@ impl Scaler {
         // Scaled: tempTexture2
         // PostKernel: tempTexture
 
-        bind_fb(gl, &self.framebuffer, &self.temp_tex[2]);
+        bind_fb(gl, self.framebuffer.as_ref(), self.temp_tex[2].as_ref());
         gl.use_program(self.grad_prog.program.as_ref());
-        bind_attribute(gl, &self.quad_buffer, self.grad_prog.attributes["a_pos"], 2);
-        bind_tex(gl, &self.temp_tex[1], 0);
-        bind_tex(gl, &self.temp_tex[0], 1);
+        bind_attribute(gl, self.quad_buffer.as_ref(), self.grad_prog.attributes["a_pos"], 2);
+        bind_tex(gl, self.temp_tex[1].as_ref(), 0);
+        bind_tex(gl, self.temp_tex[0].as_ref(), 1);
         gl.uniform1i(self.grad_prog.uniforms.get("u_texture"), 0);
         gl.uniform1i(self.grad_prog.uniforms.get("u_textureTemp"), 1);
         gl.uniform2f(
@@ -230,11 +230,11 @@ impl Scaler {
         // Scaled: tempTexture2
         // PostKernel: tempTexture3
 
-        bind_fb(gl, &self.framebuffer, &self.temp_tex[0]);
+        bind_fb(gl, self.framebuffer.as_ref(), self.temp_tex[0].as_ref());
         gl.use_program(self.final_prog.program.as_ref());
-        bind_attribute(gl, &self.quad_buffer, self.final_prog.attributes["a_pos"], 2);
-        bind_tex(gl, &self.temp_tex[1], 0);
-        bind_tex(gl, &self.temp_tex[2], 1);
+        bind_attribute(gl, self.quad_buffer.as_ref(), self.final_prog.attributes["a_pos"], 2);
+        bind_tex(gl, self.temp_tex[1].as_ref(), 0);
+        bind_tex(gl, self.temp_tex[2].as_ref(), 1);
         gl.uniform1i(self.final_prog.uniforms.get("u_texture"), 0);
         gl.uniform1i(self.final_prog.uniforms.get("u_textureTemp"), 1);
         gl.uniform1f(
@@ -253,11 +253,11 @@ impl Scaler {
         // Scaled: tempTexture
         // PostKernel: tempTexture3
 
-        bind_fb(gl, &None, &None);
+        bind_fb(gl, None, None);
         gl.use_program(self.draw_prog.program.as_ref());
-        bind_attribute(gl, &self.quad_buffer, self.draw_prog.attributes["a_pos"], 2);
-        bind_tex(gl, &self.temp_tex[0], 0);
-        bind_tex(gl, &self.i_t, 1);
+        bind_attribute(gl, self.quad_buffer.as_ref(), self.draw_prog.attributes["a_pos"], 2);
+        bind_tex(gl, self.temp_tex[0].as_ref(), 0);
+        bind_tex(gl, self.i_t.as_ref(), 1);
         gl.uniform1i(self.draw_prog.uniforms.get("u_texture"), 0);
         gl.uniform1i(self.draw_prog.uniforms.get("u_textureOrig"), 1);
 

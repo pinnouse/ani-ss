@@ -128,13 +128,13 @@ pub fn create_texture_with_image(gl: &WebGlRenderingContext, filter: i32, data: 
     Ok(texture)
 }
 
-pub fn bind_tex(gl: &WebGlRenderingContext, texture: &Option<WebGlTexture>, unit: u32) {
+pub fn bind_tex(gl: &WebGlRenderingContext, texture: Option<&WebGlTexture>, unit: u32) {
     gl.active_texture(GL::TEXTURE0 + unit);
-    gl.bind_texture(GL::TEXTURE_2D, texture.as_ref());
+    gl.bind_texture(GL::TEXTURE_2D, texture);
 }
 
-pub fn update_texture(gl: &WebGlRenderingContext, texture: &Option<WebGlTexture>, src: &HtmlVideoElement) {
-    gl.bind_texture(GL::TEXTURE_2D, texture.as_ref());
+pub fn update_texture(gl: &WebGlRenderingContext, texture: Option<&WebGlTexture>, src: &HtmlVideoElement) {
+    gl.bind_texture(GL::TEXTURE_2D, texture);
     gl.tex_image_2d_with_u32_and_u32_and_video(
         GL::TEXTURE_2D,
         0,
@@ -152,15 +152,15 @@ pub fn create_buffer(gl: &WebGlRenderingContext, data: &[u8]) -> Result<WebGlBuf
     Ok(buffer)
 }
 
-pub fn bind_attribute(gl: &WebGlRenderingContext, buffer: &Option<WebGlBuffer>, attribute: u32, num_components: i32) {
-    gl.bind_buffer(GL::ARRAY_BUFFER, buffer.as_ref());
+pub fn bind_attribute(gl: &WebGlRenderingContext, buffer: Option<&WebGlBuffer>, attribute: u32, num_components: i32) {
+    gl.bind_buffer(GL::ARRAY_BUFFER, buffer);
     gl.enable_vertex_attrib_array(attribute);
     gl.vertex_attrib_pointer_with_i32(attribute, num_components, GL::FLOAT, false, 0, 0);
 }
 
-pub fn bind_fb(gl: &WebGlRenderingContext, framebuffer: &Option<WebGlFramebuffer>, texture: &Option<WebGlTexture>) {
-    gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer.as_ref());
+pub fn bind_fb(gl: &WebGlRenderingContext, framebuffer: Option<&WebGlFramebuffer>, texture: Option<&WebGlTexture>) {
+    gl.bind_framebuffer(GL::FRAMEBUFFER, framebuffer);
     if texture.is_some() {
-        gl.framebuffer_texture_2d(GL::FRAMEBUFFER, GL::COLOR_ATTACHMENT0, GL::TEXTURE_2D, texture.as_ref(), 0);
+        gl.framebuffer_texture_2d(GL::FRAMEBUFFER, GL::COLOR_ATTACHMENT0, GL::TEXTURE_2D, texture, 0);
     }
 }
