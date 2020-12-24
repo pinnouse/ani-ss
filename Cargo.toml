@@ -3,6 +3,9 @@ name = "ani-ss"
 version = "0.1.0"
 authors = ["Nick <cupofpho@gmail.com>"]
 edition = "2018"
+description = "super sampling for the web"
+repository = "https://github.com/pinnouse/ani-ss"
+license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -15,14 +18,14 @@ lto = true
 [dependencies]
 js-sys = "0.3.46"
 wasm-bindgen = "0.2.69"
-serde = "1.0.118"
-serde-wasm-bindgen = "0.1.3"
 
 [dependencies.web-sys]
 version = "0.3.46"
 features = [
+    "console",
     'CanvasRenderingContext2d',
     'HtmlCanvasElement',
+    'HtmlImageElement',
     'HtmlVideoElement',
     'Window',
     'WebGlActiveInfo',
