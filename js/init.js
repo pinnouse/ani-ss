@@ -1,4 +1,4 @@
-import * as wasm from './pkg';
+import * as wasm from '../pkg';
 
 let scaler = null
 
@@ -16,6 +16,10 @@ window.onload = function() {
         vid.play()
     }, true)
     vid.addEventListener('loadedmetadata', function() {
+        if (!scaler) {
+            scaler = wasm.Scaler.new(gl)
+        }
+        console.log(vid)
         scaler.input_video(vid)
         scaler.resize(scale)
     }, true)
@@ -53,6 +57,7 @@ function getSourceType(uri) {
 
 function changeImage(src) {
     const vid = document.getElementById('vid')
+    const gl = document.getElementById('canv').getContext('webgl')
     if (!vid.paused)
         vid.pause()
 
@@ -60,6 +65,9 @@ function changeImage(src) {
     inputImg.crossOrigin = "Anonymous"
     inputImg.src = src
     inputImg.onload = function() {
+        if (!scaler) {
+            scaler = wasm.Scaler.new(gl)
+        }
         scaler.input_image(inputImg)
         scaler.resize(scale)
     }

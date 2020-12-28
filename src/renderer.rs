@@ -1,18 +1,14 @@
 extern crate wasm_bindgen;
 extern crate web_sys;
+extern crate js_sys;
 
 use wasm_bindgen::prelude::*;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
+use js_sys::*;
 use crate::utils::*;
 use crate::shaders::*;
 use wasm_bindgen::JsCast;
-
-macro_rules! log {
-    ( $( $t:tt )* ) => {
-        web_sys::console::log_1(&format!( $( $t )* ).into());
-    }
-}
 
 #[wasm_bindgen]
 pub struct Scaler {
@@ -51,19 +47,21 @@ pub struct Scaler {
 #[wasm_bindgen]
 impl Scaler {
     pub fn new(gl: WebGlRenderingContext) -> Self {
+        let vertices: Vec<f32> = vec![0., 1., 0., 0., 1., 1., 1., 1., 0., 0., 1., 0.];
+        let vertices_buffer = Float32Array::from(vertices.as_slice());
         Self {
             i_t: None,
             i_v: None,
             i_w: 0,
             i_h: 0,
-            quad_buffer: create_buffer(&gl, &[0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0]).ok(),
+            quad_buffer: create_buffer(&gl, Some(&vertices_buffer.buffer())).ok(),
             framebuffer: gl.create_framebuffer(),
-            scale_prog: create_program(&gl, QUAD_VERT, SCALE_FRAG).unwrap(),
-            lum_prog: create_program(&gl, QUAD_VERT, LUM_FRAG).unwrap(),
-            push_prog: create_program(&gl, QUAD_VERT, PUSH_FRAG).unwrap(),
-            grad_prog: create_program(&gl, QUAD_VERT, GRAD_FRAG).unwrap(),
-            final_prog: create_program(&gl, QUAD_VERT, FINAL_FRAG).unwrap(),
-            draw_prog: create_program(&gl, QUAD_VERT, DRAW_FRAG).unwrap(),
+            scale_prog: create_prog(&gl, QUAD_VERT, SCALE_FRAG).unwrap(),
+            lum_prog: create_prog(&gl, QUAD_VERT, LUM_FRAG).unwrap(),
+            push_prog: create_prog(&gl, QUAD_VERT, PUSH_FRAG).unwrap(),
+            grad_prog: create_prog(&gl, QUAD_VERT, GRAD_FRAG).unwrap(),
+            final_prog: create_prog(&gl, QUAD_VERT, FINAL_FRAG).unwrap(),
+            draw_prog: create_prog(&gl, QUAD_VERT, DRAW_FRAG).unwrap(),
             scale_tex: None,
             temp_tex: vec![None, None, None],
             bold: 6.0,
@@ -92,8 +90,8 @@ impl Scaler {
     }
 
     pub fn input_video(&mut self, video: HtmlVideoElement) {
-        self.i_w = video.width();
-        self.i_h = video.height();
+        self.i_w = video.video_width();
+        self.i_h = video.video_height();
         let empty_pixels: Vec<u8> = vec![0; (video.width() * video.height() * 4) as usize];
         self.i_t = Some(
             create_tex(

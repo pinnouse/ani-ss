@@ -1,1 +1,1 @@
-import('./init.js')
+import('./js/init.js')

@@ -1,9 +1,11 @@
 extern crate wasm_bindgen;
 extern crate web_sys;
+extern crate js_sys;
 
 use wasm_bindgen::prelude::*;
 use web_sys::WebGlRenderingContext as GL;
 use web_sys::*;
+use js_sys::*;
 use std::collections::HashMap;
 
 #[wasm_bindgen]
@@ -30,7 +32,7 @@ pub fn create_shader(gl: &WebGlRenderingContext, shader_type: u32, source: &str)
     Ok(shader)
 }
 
-pub fn create_program(gl: &WebGlRenderingContext, vertex_source: &str, fragment_source: &str)
+pub fn create_prog(gl: &WebGlRenderingContext, vertex_source: &str, fragment_source: &str)
                       -> Result<ProgramWrapper, String> {
     let program: WebGlProgram = gl.create_program().ok_or(String::from("Error creating program"))?;
     let vertex_shader: WebGlShader = create_shader(gl, GL::VERTEX_SHADER, vertex_source)?;
@@ -145,10 +147,10 @@ pub fn update_texture(gl: &WebGlRenderingContext, texture: Option<&WebGlTexture>
     ).expect("Failed to update texture 2D");
 }
 
-pub fn create_buffer(gl: &WebGlRenderingContext, data: &[u8]) -> Result<WebGlBuffer, String> {
+pub fn create_buffer(gl: &WebGlRenderingContext, data: Option<&ArrayBuffer>) -> Result<WebGlBuffer, String> {
     let buffer: WebGlBuffer = gl.create_buffer().ok_or(String::from("Failed to create buffer"))?;
     gl.bind_buffer(GL::ARRAY_BUFFER, Some(&buffer));
-    gl.buffer_data_with_u8_array(GL::ARRAY_BUFFER, data, GL::STATIC_DRAW);
+    gl.buffer_data_with_opt_array_buffer(GL::ARRAY_BUFFER, data, GL::STATIC_DRAW);
     Ok(buffer)
 }
 
