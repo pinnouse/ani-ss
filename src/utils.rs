@@ -147,7 +147,7 @@ pub fn update_texture(gl: &WebGlRenderingContext, texture: Option<&WebGlTexture>
     ).expect("Failed to update texture 2D");
 }
 
-pub fn create_buffer(gl: &WebGlRenderingContext, data: Option<&ArrayBuffer>) -> Result<WebGlBuffer, String> {
+pub fn create_array_buffer(gl: &WebGlRenderingContext, data: Option<&ArrayBuffer>) -> Result<WebGlBuffer, String> {
     let buffer: WebGlBuffer = gl.create_buffer().ok_or(String::from("Failed to create buffer"))?;
     gl.bind_buffer(GL::ARRAY_BUFFER, Some(&buffer));
     gl.buffer_data_with_opt_array_buffer(GL::ARRAY_BUFFER, data, GL::STATIC_DRAW);

@@ -1,13 +1,28 @@
+extern crate wasm_bindgen;
+
+use wasm_bindgen::prelude::*;
 use std::str;
 use std::iter;
 use std::str::FromStr;
-use super::Program;
+use std::error::Error;
 
+/// Program struct holds all the info of a single hook.
+#[wasm_bindgen]
+pub struct Program {
+    pub program: String,
+    pub save: String,
+    pub hook: String,
+    pub desc: Option<String>,
+    pub bind: Vec<String>,
+    pub scale: Option<f32>,
+}
+
+/// Shader hook program implementations to parse a GLSL shader string
 impl Program {
-    fn parse_hook(block: &mut iter::Peekable<str::Lines>) -> Result<Program, &str> {
+    fn parse_hook(block: &mut iter::Peekable<str::Lines>) -> Result<Program, Box<dyn Error>> {
         let mut metadata_context = true;
-        let mut save = String::new();
-        let mut desc = String::new();
+        let mut save = String::from("HOOK");
+        let mut desc: Option<String> = None;
         let mut hook = String::new();
         let mut binded: Vec<String> = vec![];
         let mut prog = String::new();
@@ -21,9 +36,9 @@ impl Program {
                     }
                     let md = String::from(&line[3..].trim());
                     if md.starts_with("SAVE") && md.len() > 4 {
-                        save.push_str(&md[4..].trim());
+                        save = String::from(&md[4..].trim());
                     } else if md.starts_with("DESC") && md.len() > 4 {
-                        desc.push_str(&md[4..].trim());
+                        desc.get_or_insert_with(String::new).push_str(&md[4..].trim());
                     } else if md.starts_with("HOOK") && md.len() > 4 {
                         hook.push_str(&md[4..].trim());
                     } else if md.starts_with("BIND") && md.len() > 4 {
@@ -59,7 +74,24 @@ impl Program {
         })
     }
 
-    pub fn read_file(shader: &str) -> Vec<Program> {
+    /// Reads a string in the form of an MPV GLSL shader file with hooks only and returns a vector
+    /// of programs that it parses
+    ///
+    /// # Arguments
+    /// * `read_str` - The raw GLSL shader file
+    ///
+    /// # Examples
+    /// ```
+    /// let shader = r#"
+    /// //!DESC Identity Shader
+    /// //!HOOK NATIVE
+    /// vec4 hook {
+    ///     return HOOKED_tex(HOOKED_pos);
+    /// }
+    /// "#;
+    /// let programs = Program::read_str(&shader);
+    /// ```
+    pub fn read_str(shader: &str) -> Vec<Program> {
         let mut lines = shader.lines().peekable();
         let mut programs = vec![];
         for line in lines.peek() {
@@ -67,7 +99,7 @@ impl Program {
                 match parse_hook(&mut lines) {
                     Ok(p) => programs.push(p),
                     Err(err) => {
-                        eprintln!("Error: Failed to parse program starting on line: {}\n{}", line, err);
+                        eprintln!("Error: Failed to parse program starting on line: {}\n{:?}", line, err);
                     }
                 }
             } else {

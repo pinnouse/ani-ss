@@ -54,7 +54,7 @@ impl Scaler {
             i_v: None,
             i_w: 0,
             i_h: 0,
-            quad_buffer: create_buffer(&gl, Some(&vertices_buffer.buffer())).ok(),
+            quad_buffer: create_array_buffer(&gl, Some(&vertices_buffer.buffer())).ok(),
             framebuffer: gl.create_framebuffer(),
             scale_prog: create_prog(&gl, QUAD_VERT, SCALE_FRAG).unwrap(),
             lum_prog: create_prog(&gl, QUAD_VERT, LUM_FRAG).unwrap(),
