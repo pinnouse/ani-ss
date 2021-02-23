@@ -1,25 +1,32 @@
 extern crate wasm_bindgen;
+extern crate js_sys;
+extern crate itertools;
 
 use wasm_bindgen::prelude::*;
-use std::str;
-use std::iter;
-use std::str::FromStr;
-use std::error::Error;
+use std::{str, str::FromStr};
+use itertools::put_back;
 
 /// Program struct holds all the info of a single hook.
 #[wasm_bindgen]
+#[derive(Debug)]
 pub struct Program {
+    #[wasm_bindgen(skip)]
     pub program: String,
+    #[wasm_bindgen(skip)]
     pub save: String,
+    #[wasm_bindgen(skip)]
     pub hook: String,
+    #[wasm_bindgen(skip)]
     pub desc: Option<String>,
+    #[wasm_bindgen(skip)]
     pub bind: Vec<String>,
+    #[wasm_bindgen(skip)]
     pub scale: Option<f32>,
 }
 
 /// Shader hook program implementations to parse a GLSL shader string
 impl Program {
-    fn parse_hook(block: &mut iter::Peekable<str::Lines>) -> Result<Program, Box<dyn Error>> {
+    fn parse_hook(block: &mut itertools::PutBack<str::Lines>) -> Result<Program, String> {
         let mut metadata_context = true;
         let mut save = String::from("HOOK");
         let mut desc: Option<String> = None;
@@ -27,22 +34,21 @@ impl Program {
         let mut binded: Vec<String> = vec![];
         let mut prog = String::new();
         let mut scale = None;
-        for line in block.peek() {
+        while let Some(line) = block.next() {
             if metadata_context {
                 if line.starts_with("//!") {
                     if line.trim().len() <= 3 {
-                        block.next();
                         continue
                     }
-                    let md = String::from(&line[3..].trim());
+                    let md = String::from(line[3..].trim());
                     if md.starts_with("SAVE") && md.len() > 4 {
-                        save = String::from(&md[4..].trim());
+                        save = String::from(md[4..].trim());
                     } else if md.starts_with("DESC") && md.len() > 4 {
                         desc.get_or_insert_with(String::new).push_str(&md[4..].trim());
                     } else if md.starts_with("HOOK") && md.len() > 4 {
-                        hook.push_str(&md[4..].trim());
+                        hook.push_str(md[4..].trim());
                     } else if md.starts_with("BIND") && md.len() > 4 {
-                        binded.push(String::from(&md[4..].trim()));
+                        binded.push(String::from(md[4..].trim()));
                     } else if md.starts_with("WIDTH") && md.len() > 5
                         || md.starts_with("HEIGHT") && md.len() > 6 {
                         if let Some(s) = md[5..]
@@ -54,18 +60,19 @@ impl Program {
                 } else {
                     metadata_context = false;
                 }
-                block.next();
-            } else if line.starts_with("//!") {
-                break;
-            } else {
+            }
+            if !metadata_context {
+                if line.starts_with("//!") {
+                    block.put_back(line);
+                    break;
+                }
                 prog.push_str(format!("{}\n", line).as_str());
-                block.next();
             }
         }
         if hook.len() == 0 {
-            Err("HOOK is required for shader")
+            return Err(String::from("HOOK is required for shader"));
         } else if prog.trim().len() == 0 {
-            Err("hook block body is empty, rejected")
+            return Err(String::from("hook block body is empty, rejected"));
         }
         Ok(Program {
             program: prog,
@@ -92,18 +99,17 @@ impl Program {
     /// let programs = Program::read_str(&shader);
     /// ```
     pub fn read_str(shader: &str) -> Vec<Program> {
-        let mut lines = shader.lines().peekable();
+        let mut lines = put_back(shader.lines());
         let mut programs = vec![];
-        for line in lines.peek() {
-            if line.starts_with("//!") {
-                match parse_hook(&mut lines) {
+        while let Some(line) = lines.next() {
+            if line.trim().starts_with("//!") {
+                lines.put_back(line);
+                match Self::parse_hook(&mut lines) {
                     Ok(p) => programs.push(p),
                     Err(err) => {
-                        eprintln!("Error: Failed to parse program starting on line: {}\n{:?}", line, err);
+                        panic!("Error: Failed to parse program starting on line: {}\n{:?}", line, err);
                     }
-                }
-            } else {
-                lines.next();
+                };
             }
         }
         programs
