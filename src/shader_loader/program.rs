@@ -36,7 +36,7 @@ impl Program {
         let mut scale = None;
         while let Some(line) = block.next() {
             if metadata_context {
-                if line.starts_with("//!") {
+                if line.trim().starts_with("//!") {
                     if line.trim().len() <= 3 {
                         continue
                     }
