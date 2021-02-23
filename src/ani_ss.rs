@@ -268,7 +268,6 @@ impl AniSS {
         };
         self.update_texture();
         if self.texture.is_none() {
-            log!("No texture");
             return false;
         }
         let native_size = {
@@ -276,7 +275,6 @@ impl AniSS {
             (s.0 as f32, s.1 as f32)
         };
         if native_size.0 <= 0.0 || native_size.1 <= 0.0 {
-            log!("Improper size");
             return false;
         }
         let gl = &self.gl;
