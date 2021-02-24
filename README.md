@@ -58,4 +58,4 @@ aniSS.add_program('...') // Pass the program as a string, replacing '...' with t
 - GLSL: `szexpr` with `WIDTH` and `HEIGHT` are disregarded and the last parsable float is stored as the scale (looking to turn it into a multiplier/scale field)
 
 ### Working Example
-Check out the `js/example_modified.glsl` for a modified version of the Anime4K Upscale+Deblur CNN(M) shader
+Check out the `js/shader_modifications.diff` for the diff modifications required for the `Anime4K_Upscale_CNN_M_x2_Deblur.glsl` shader to be usable.
