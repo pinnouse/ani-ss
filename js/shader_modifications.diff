@@ -2,34 +2,6 @@
 < //!SAVE MMKERNEL
 ---
 > //!SAVE MMMKERNEL
-546c546
-< 	return max(max(a, b), c);
----
->     return max(max(a, b), c);
-549c549
-< 	return min(min(a, b), c);
----
->     return min(min(a, b), c);
-553,561c553,561
-< 	float a0 = L_tex(pos - d).x;
-< 	float b0 = L_tex(pos).x;
-< 	float c0 = L_tex(pos + d).x;
-< 	
-< 	float a1 = L_tex(pos - d).y;
-< 	float b1 = L_tex(pos).y;
-< 	float c1 = L_tex(pos + d).y;
-< 	
-< 	return vec2(min3v(a0, b0, c0), max3v(a1, b1, c1));
----
->     float a0 = L_tex(pos - d).x;
->     float b0 = L_tex(pos).x;
->     float c0 = L_tex(pos + d).x;
-> 
->     float a1 = L_tex(pos - d).y;
->     float b1 = L_tex(pos).y;
->     float c1 = L_tex(pos + d).y;
-> 
->     return vec2(min3v(a0, b0, c0), max3v(a1, b1, c1));
 572c572
 < //!BIND MMKERNEL
 ---
