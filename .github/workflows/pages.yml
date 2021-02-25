@@ -18,9 +18,8 @@ jobs:
           version: 'latest'
 
       - name: Build
-        uses: borales/actions-yarn@v2.0.0
-        with:
-          cmd: build
+        run: |
+          yarn build
 
       - name: Deploy
         uses: JamesIves/github-pages-deploy-action@4.0.0
