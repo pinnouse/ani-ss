@@ -12,6 +12,10 @@ jobs:
 
       - name: Install
         uses: bahmutov/npm-install@v1
+        
+      - uses: jetli/wasm-pack-action@v0.3.0
+        with:
+          version: 'latest'
 
       - name: Build
         uses: borales/actions-yarn@v2.0.0
