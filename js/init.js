@@ -1,9 +1,10 @@
-import * as wasm from '../pkg';
+import { AniSS } from '../pkg';
 
-let scaler = null
+let aniSS = null
 
-const add_program = function() {
-    scaler.add_program(`
+const addSimpleProgram = function() {
+    if (!aniSS) return;
+    aniSS.addProgram(`
 //!DESC Linear-Upscale
 //!HOOK NATIVE
 //!BIND HOOKED
@@ -14,6 +15,18 @@ vec4 hook() {
     return HOOKED_tex(HOOKED_pos);
 }
     `)
+    alert('Added simple program')
+}
+
+/**
+ * Links and adds a new hook/program to the ani-ss
+ *
+ * @param program {string} Program as string to add
+ * @returns {boolean} whether or not the program added without errors
+ */
+const addCustomProgram = function(program) {
+    if (!aniSS) return true
+    return aniSS.addProgram(program)
 }
 
 const startup = function() {
@@ -26,21 +39,20 @@ const startup = function() {
         vid.play()
     }, true)
     vid.addEventListener('loadeddata', function() {
-        if (!scaler) {
-            scaler = wasm.AniSS.new(gl)
+        if (!aniSS) {
+            aniSS = new AniSS(gl)
         }
-        scaler.set_source(vid)
+        aniSS.setSource(vid)
     }, true)
     vid.addEventListener('error', function() {
         alert("Can't load the video.")
     }, true)
 
-    scaler = wasm.AniSS.new(gl)
-    add_program()
+    aniSS = new AniSS(gl)
 
     function render() {
-        if (scaler) {
-            scaler.render()
+        if (aniSS) {
+            aniSS.render()
         }
         requestAnimationFrame(render)
     }
@@ -73,10 +85,10 @@ function changeImage(src) {
     inputImg.crossOrigin = "Anonymous"
     inputImg.src = src
     inputImg.onload = function() {
-        if (!scaler) {
-            scaler = wasm.AniSS.new(gl)
+        if (!aniSS) {
+            aniSS = new AniSS(gl)
         }
-        scaler.set_source(inputImg)
+        aniSS.setSource(inputImg)
     }
     inputImg.onerror = function() {
         alert("Can't load the image.")
@@ -103,4 +115,21 @@ function onSelectFile(input) {
     }
 }
 
+function onSelectShader(input) {
+    if (input.files && input.files[0]) {
+        let reader = new FileReader()
+        reader.onload = e => {
+            let src = e.target.result
+            if (!addCustomProgram(src))  {
+                alert('Custom program added with error, check log for details')
+            } else {
+                alert('Program was added successfully!')
+            }
+        }
+        reader.readAsText(input.files[0])
+    }
+}
+
+window.addSimpleProgram = addSimpleProgram;
+window.onSelectShader = onSelectShader;
 window.onSelectFile = onSelectFile

@@ -2,6 +2,8 @@ extern crate wasm_bindgen;
 extern crate web_sys;
 extern crate js_sys;
 extern crate console_error_panic_hook;
+extern crate log;
+extern crate console_log;
 
 use crate::shader_loader::{program_wrapper::ProgramWrapper, Program, program_wrapper};
 use wasm_bindgen::{prelude::*, JsCast};
@@ -9,13 +11,7 @@ use web_sys::{WebGlRenderingContext as GL, *};
 use js_sys::Float32Array;
 use std::collections::HashMap;
 use crate::utils::{bind_tex, create_array_buffer, bind_attribute};
-
-// A macro to provide `println!(..)`-style syntax for `console.log` logging.
-macro_rules! log {
-    ( $( $t:tt )* ) => {
-        web_sys::console::log_1(&format!( $( $t )* ).into());
-    }
-}
+use log::{info, error};
 
 static VERTICES: [f32; 12] = [
     -1.,  1.,    //TOP LEFT
@@ -47,7 +43,7 @@ pub struct AniSS {
     saved_textures: HashMap<String, WebGlTexture>,
     framebuffer: WebGlFramebuffer,
     updated: bool,
-    custom_scale: Option<f32>,
+    custom_scale: Option<(f32, f32)>,
     html_source: Option<AniSSSource>,
     draw_prog: DrawProgram,
 }
@@ -65,8 +61,12 @@ fn create_new_texture(gl: &WebGlRenderingContext) -> WebGlTexture {
 
 #[wasm_bindgen]
 impl AniSS {
-    pub fn new(gl: WebGlRenderingContext) -> Self {
+    #[wasm_bindgen(constructor)]
+    pub fn new(gl: WebGlRenderingContext) -> AniSS {
         console_error_panic_hook::set_once();
+        if let Err(e) = console_log::init() {
+            error!("Console Log Error {}", e);
+        }
         let vertex_buffer = Float32Array::from(&VERTICES[..]).buffer();
         AniSS {
             programs: vec![],
@@ -132,6 +132,7 @@ impl AniSS {
         self.bind_tex_data(texture, width, height, empty_pixels.as_slice())
     }
 
+    #[wasm_bindgen(js_name = resizeTextures)]
     pub fn resize_textures(&self) {
         if self.html_source.is_none() {
             return;
@@ -146,25 +147,29 @@ impl AniSS {
         let mut final_size: (f32, f32) = native_size;
         for wrapper in &self.programs {
             let hooked_size = tex_sizes.get(&wrapper.hook).unwrap_or(&native_size);
-            let scale = wrapper.scale.unwrap_or(1.0);
-            let new_size = (hooked_size.0 * scale, hooked_size.1 * scale);
+            let scale = wrapper.scale.unwrap_or((1.0, 1.0));
+            let new_size = (hooked_size.0 * scale.0, hooked_size.1 * scale.1);
             tex_sizes.insert(wrapper.save.clone(), new_size);
+            if wrapper.save.as_str() == "HOOK" {
+                tex_sizes.insert(String::from("NATIVE"), new_size);
+                final_size = new_size;
+            }
             self.set_empty_texture(self.saved_textures.get(&wrapper.save), new_size.0 as i32, new_size.1 as i32).expect("Failed to create texture 2D");
-            log!("New size {:?}", new_size);
-            final_size = new_size;
         }
         let canvas = self.get_canvas();
         canvas.set_width(final_size.0 as u32);
         canvas.set_height(final_size.1 as u32);
-        log!("Resized textures");
+        info!("Resized textures");
     }
 
+    #[wasm_bindgen(js_name = setScale)]
     pub fn set_scale(&mut self, scale: Option<f32>) {
-        self.custom_scale = scale;
+        self.custom_scale = scale.and_then(|s| Some((s, s)) );
     }
 
+    #[wasm_bindgen(js_name = setSource)]
     pub fn set_source(&mut self, element: HtmlElement) {
-        log!("Setting source");
+        info!("Setting source");
         match element.tag_name().to_lowercase().as_str() {
             "img" => {
                 self.html_source = Some(AniSSSource::ImageSource(element.dyn_into::<HtmlImageElement>().expect("Error: expected img element for source could not convert to HtmlImageElement")));
@@ -183,7 +188,9 @@ impl AniSS {
         };
     }
 
-    pub fn add_program(&mut self, program: &str) {
+    #[wasm_bindgen(js_name = addProgram)]
+    pub fn add_program(&mut self, program: &str) -> bool {
+        let mut all_success = true;
         for p in Program::read_str(program) {
             match ProgramWrapper::new(&self.gl, &p) {
                 Ok(p) => {
@@ -191,13 +198,17 @@ impl AniSS {
                         let new_tex = create_new_texture(&self.gl);
                         self.saved_textures.insert(p.save.clone(), new_tex);
                     }
-                    log!("Added new hook {} ({})", p.save, p.desc);
+                    info!("Added new hook {} ({})", p.save, p.desc);
                     self.programs.push(p);
                 },
-                Err(e) => panic!("Error: failed to create program\n{:?}", e),
+                Err(e) => {
+                    error!("Error: failed to create program\n{:?}", e);
+                    all_success = false;
+                },
             };
         }
         self.resize_textures();
+        all_success
     }
 
     fn get_source_size(&self) -> (u32, u32) {
@@ -270,7 +281,7 @@ impl AniSS {
         if self.texture.is_none() {
             return false;
         }
-        let native_size = {
+        let mut native_size = {
             let s = self.get_source_size();
             (s.0 as f32, s.1 as f32)
         };
@@ -285,24 +296,25 @@ impl AniSS {
         );
         gl.bind_framebuffer(GL::FRAMEBUFFER, Some(&self.framebuffer));
         let mut tex_sizes: HashMap<String, (f32, f32)> = HashMap::new();
+        let mut wrote_hook = false;
         for program in &self.programs {
-            let tex_size: (f32, f32) = if let Some(s) = program.scale {
-                if let Some(custom_scale) = self.custom_scale {
-                    (native_size.0 * custom_scale, native_size.1 * custom_scale)
-                } else {
-                    (native_size.0 * s, native_size.1 * s)
-                }
-            } else {
-                native_size
+            let scale = program.scale
+                .and_then(|s| Some(self.custom_scale.unwrap_or(s)) )
+                .unwrap_or((1.0, 1.0));
+            let (hooked_tex, tex_size): (Option<&WebGlTexture>, (f32, f32)) = match program.hook.as_str() {
+                "NATIVE" if wrote_hook => (self.saved_textures.get("HOOK"), *tex_sizes.get("HOOK").unwrap_or(&native_size)),
+                "NATIVE" if !wrote_hook => (self.texture.as_ref(), native_size),
+                _ => (self.saved_textures.get(&program.hook), *tex_sizes.get(&program.hook).unwrap_or(&native_size)),
             };
+            let tex_size = (tex_size.0 * scale.0, tex_size.1 * scale.1);
             gl.viewport(
                 0, 0, tex_size.0 as i32, tex_size.1 as i32
             );
-            let hooked_tex: Option<&WebGlTexture> = match program.hook.as_str() {
-                "NATIVE" => self.texture.as_ref(),
-                _ => self.saved_textures.get(&program.hook),
-            };
             let save_tex: Option<&WebGlTexture> = self.saved_textures.get(&program.save);
+            if program.save.as_str() == "HOOK" {
+                native_size = tex_size;
+                wrote_hook = true;
+            }
             gl.framebuffer_texture_2d(GL::FRAMEBUFFER, GL::COLOR_ATTACHMENT0, GL::TEXTURE_2D, save_tex, 0);
             gl.use_program(Some(&program.program));
             if !program.attributes.contains_key("aPos") {
@@ -332,7 +344,7 @@ impl AniSS {
             }
             gl.draw_arrays(GL::TRIANGLES, 0, 6);
         }
-        let render_texture: Option<&WebGlTexture> = if self.saved_textures.contains_key("HOOK") {
+        let render_texture: Option<&WebGlTexture> = if self.saved_textures.contains_key("HOOK") && wrote_hook {
             self.saved_textures.get("HOOK")
         } else {
             self.texture.as_ref()

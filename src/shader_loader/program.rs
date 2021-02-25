@@ -1,10 +1,12 @@
 extern crate wasm_bindgen;
 extern crate js_sys;
 extern crate itertools;
+extern crate log;
 
 use wasm_bindgen::prelude::*;
 use std::{str, str::FromStr};
 use itertools::put_back;
+use log::error;
 
 /// Program struct holds all the info of a single hook.
 #[wasm_bindgen]
@@ -21,7 +23,7 @@ pub struct Program {
     #[wasm_bindgen(skip)]
     pub bind: Vec<String>,
     #[wasm_bindgen(skip)]
-    pub scale: Option<f32>,
+    pub scale: Option<(f32, f32)>,
 }
 
 /// Shader hook program implementations to parse a GLSL shader string
@@ -33,11 +35,13 @@ impl Program {
         let mut hook = String::new();
         let mut binded: Vec<String> = vec![];
         let mut prog = String::new();
-        let mut scale = None;
+        let mut scale_w: Option<f32> = None;
+        let mut scale_h: Option<f32> = None;
         while let Some(line) = block.next() {
             if metadata_context {
-                if line.trim().starts_with("//!") {
-                    if line.trim().len() <= 3 {
+                let line = line.trim();
+                if line.starts_with("//!") {
+                    if line.len() <= 3 {
                         continue
                     }
                     let md = String::from(line[3..].trim());
@@ -49,12 +53,17 @@ impl Program {
                         hook.push_str(md[4..].trim());
                     } else if md.starts_with("BIND") && md.len() > 4 {
                         binded.push(String::from(md[4..].trim()));
-                    } else if md.starts_with("WIDTH") && md.len() > 5
-                        || md.starts_with("HEIGHT") && md.len() > 6 {
+                    } else if md.starts_with("WIDTH") && md.len() > 5 {
                         if let Some(s) = md[5..]
                             .split(" ")
                             .find(|x| f32::from_str(x).is_ok()) {
-                            scale = f32::from_str(s).ok();
+                            scale_w = f32::from_str(s).ok();
+                        }
+                    } else if md.starts_with("HEIGHT") && md.len() > 6 {
+                        if let Some(s) = md[6..]
+                            .split(" ")
+                            .find(|x| f32::from_str(x).is_ok()) {
+                            scale_h = f32::from_str(s).ok();
                         }
                     }
                 } else {
@@ -74,6 +83,15 @@ impl Program {
         } else if prog.trim().len() == 0 {
             return Err(String::from("hook block body is empty, rejected"));
         }
+        if scale_w.is_some() && scale_h.is_none() {
+            scale_h = Some(1.0);
+        } else if scale_w.is_none() && scale_h.is_some() {
+            scale_w = Some(1.0);
+        }
+        let scale: Option<(f32, f32)> = match (scale_w, scale_h) {
+            (Some(w), Some(h)) => Some((w, h)),
+            _ => None,
+        };
         Ok(Program {
             program: prog,
             bind: binded,
@@ -107,7 +125,7 @@ impl Program {
                 match Self::parse_hook(&mut lines) {
                     Ok(p) => programs.push(p),
                     Err(err) => {
-                        panic!("Error: Failed to parse program starting on line: {}\n{:?}", line, err);
+                        error!("Error: Failed to parse program starting on line: {}\n{:?}", line, err);
                     }
                 };
             }

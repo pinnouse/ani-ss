@@ -6,10 +6,15 @@
     <title>Anime4k WebAssembly Simple</title>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
 
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
+
     <style>
         body {
-            background-color: #111;
-            color: white;
+            font-family: Helvetica, Arial, sans-serif;
+        }
+
+        label {
+            display: block;
         }
 
         #canv {
@@ -18,10 +23,35 @@
     </style>
 </head>
 <body>
-    <input type="file" accept="image/*,video/*" onchange="onSelectFile(this);" />
-    <div>
-        <canvas id="canv" width="1280" height="720"></canvas>
+    <div class="flex flex-row min-h-screen bg-gray-100">
+        <div class="bg-yellow-100 bg-opacity-25 w-1/3 p-10 py-20">
+            <h1 class="text-6xl">Ani-SS Web Demo</h1>
+            <span class="block mb-10 text-gray-600">Use on desktop for best experience</span>
+            <div class="mb-10">
+                <label for="sourcefile">Graphic Source</label>
+                <input id="sourcefile" type="file" accept="image/*,video/*" onchange="onSelectFile(this);" />
+            </div>
+            <div class="mb-10">
+                <label for="shaderfile">Shader</label>
+                <input id="shaderfile" type="file" accept=".glsl" onchange="onSelectShader(this);" />
+            </div>
+            <div>
+                <p>More for testing</p>
+                <button class="text-sm bg-yellow-300 p-3 rounded-md" onclick="addSimpleProgram()">
+                    Add Simple 2x Linear Upscale
+                </button>
+            </div>
+        </div>
+        <div class="text-black w-2/3 p-10 py-20">
+            <div class="mb-10">
+                <h2 class="text-2xl">Render</h2>
+                <canvas class="shadow-xl" id="canv" width="1280" height="720"></canvas>
+            </div>
+            <div>
+                <h2 class="text-xl">Video Source</h2>
+                <video id="vid" controls autoplay loop preload="auto" crossorigin="anonymous"></video>
+            </div>
+        </div>
     </div>
-    <video id="vid" controls autoplay loop preload="auto" crossorigin="anonymous"></video>
 </body>
 </html>

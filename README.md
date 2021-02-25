@@ -17,7 +17,7 @@ This is where Ani-SS fits in - arbitrary mpv shaders would theoretically apply t
 The `pkg` directory available after building should be where all your required files reside.
 After importing (like as follows in the `js/init.js` file):
 ```js
-import * as wasm from '../pkg';
+import { AniSS } from '../pkg';
 ...
 ```
 To use Ani-SS, you must provide a WebGlRenderingContext which can be obtained from a `<canvas>` element.
@@ -34,11 +34,11 @@ const gl = canvas.getContext('webgl');
 
 Now ready to use:
 ```js
-const aniSS = wasm.AniSS.new(gl);
+const aniSS = new AniSS(gl);
 ... // Obtain some <img>, <video> or <canvas> element to be the source
 // After data is loaded
 const videoElement = document.getElementById("vid"); // Some HtmlVideoElement <video id="vid"> or could be <img>, <canvas>
-aniSS.set_source(videoElement);
+aniSS.setSource(videoElement);
 
 function render() {
     aniSS.render();
@@ -49,7 +49,7 @@ requestAnimationFrame(render);
 
 To add a shader/program:
 ```js
-aniSS.add_program('...') // Pass the program as a string, replacing '...' with that string
+aniSS.addProgram('...') // Pass the program as a string, replacing '...' with that string
 ```
 
 ### Known Bugs/Inconsistencies

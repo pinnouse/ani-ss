@@ -1,12 +1,14 @@
 extern crate wasm_bindgen;
 extern crate web_sys;
 extern crate js_sys;
+extern crate log;
 
 use wasm_bindgen::prelude::*;
 use web_sys::{WebGlRenderingContext as GL, WebGlShader, WebGlProgram, WebGlRenderingContext, WebGlUniformLocation, WebGlActiveInfo};
 use std::{error::Error, error, fmt};
 use super::Program;
 use std::collections::HashMap;
+use log::error;
 
 #[derive(Debug, Clone)]
 enum WrapperError {
@@ -35,7 +37,7 @@ impl fmt::Display for WrapperError {
 #[derive(Debug)]
 pub struct ProgramWrapper {
     #[wasm_bindgen(skip)]
-    pub scale: Option<f32>,
+    pub scale: Option<(f32, f32)>,
     #[wasm_bindgen(skip)]
     pub bind: Vec<String>,
     #[wasm_bindgen(skip)]
@@ -140,6 +142,7 @@ impl ProgramWrapper {
         gl.attach_shader(&gl_program, &fragment_shader);
         gl.link_program(&gl_program);
         if gl.get_program_parameter(&gl_program, GL::LINK_STATUS).is_falsy() {
+            error!("Program Wrapper Link Error: {}", gl.get_program_info_log(&gl_program).unwrap_or(String::from("Failed to link program")));
             eprintln!("{}", gl.get_program_info_log(&gl_program).unwrap_or(String::from("Failed to link program")));
             return Err(Box::new(WrapperError::CompileError));
         }
@@ -203,7 +206,7 @@ impl ProgramWrapper {
         src = src.replace("//!BINDMOUNT", bind_mount.as_str()).replace("//!BIND", bind.as_str());
         compile_shader(gl, shader, src.as_str())
             .map_err(|msg| {
-                eprintln!("Error: {}\nVertex Shader: {}", msg, src);
+                error!("Shader Compile Error: {}\nVertex Shader: {}", msg, src);
                 Box::new(WrapperError::ShaderCompileError) as _
             })
     }
@@ -227,7 +230,7 @@ impl ProgramWrapper {
         src = src.replace("//!HOOKMOUNT", hook_mount.as_str()).replace("//!HOOK", hook);
         compile_shader(gl, shader, src.as_str())
             .map_err(|msg| {
-                eprintln!("Error: {}\nFragment Shader: {}", msg, src);
+                error!("Shader Compile Error: {}\nFragment Shader: {}", msg, src);
                 Box::new(WrapperError::ShaderCompileError) as _
             })
     }

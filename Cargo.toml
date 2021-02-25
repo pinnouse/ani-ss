@@ -17,6 +17,8 @@ lto = true
 
 [dependencies]
 console_error_panic_hook = "0.1.6"
+log = "0.4.14"
+console_log = { version = "0.2.0", features = ["color"] }
 itertools = "0.10.0"
 js-sys = "0.3.47"
 wasm-bindgen = "0.2.70"
