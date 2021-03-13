@@ -7,7 +7,7 @@ extern crate console_log;
 
 use crate::shader_loader::{program_wrapper::ProgramWrapper, Program, program_wrapper};
 use wasm_bindgen::{prelude::*, JsCast};
-use web_sys::{WebGlRenderingContext as GL, *};
+use web_sys::{WebGl2RenderingContext as GL, *};
 use js_sys::Float32Array;
 use std::collections::HashMap;
 use crate::utils::{bind_tex, create_array_buffer, bind_attribute};
@@ -36,7 +36,7 @@ enum AniSSSource {
 
 #[wasm_bindgen]
 pub struct AniSS {
-    gl: WebGlRenderingContext,
+    gl: WebGl2RenderingContext,
     vbo: WebGlBuffer,
     programs: Vec<ProgramWrapper>,
     texture: Option<WebGlTexture>,
@@ -48,7 +48,7 @@ pub struct AniSS {
     draw_prog: DrawProgram,
 }
 
-fn create_new_texture(gl: &WebGlRenderingContext) -> WebGlTexture {
+fn create_new_texture(gl: &WebGl2RenderingContext) -> WebGlTexture {
     let texture = gl.create_texture().expect("Error: could not create a new texture");
     gl.bind_texture(GL::TEXTURE_2D, Some(&texture));
     gl.tex_parameteri(GL::TEXTURE_2D, GL::TEXTURE_WRAP_S, GL::CLAMP_TO_EDGE as i32);
@@ -62,7 +62,7 @@ fn create_new_texture(gl: &WebGlRenderingContext) -> WebGlTexture {
 #[wasm_bindgen]
 impl AniSS {
     #[wasm_bindgen(constructor)]
-    pub fn new(gl: WebGlRenderingContext) -> AniSS {
+    pub fn new(gl: WebGl2RenderingContext) -> AniSS {
         console_error_panic_hook::set_once();
         if let Err(e) = console_log::init() {
             error!("Console Log Error {}", e);
@@ -82,7 +82,7 @@ impl AniSS {
         }
     }
 
-    fn create_draw_program(gl: &WebGlRenderingContext) -> DrawProgram {
+    fn create_draw_program(gl: &WebGl2RenderingContext) -> DrawProgram {
         let program = gl.create_program().expect("Could not create draw program");
         let v_shader = gl.create_shader(GL::VERTEX_SHADER).expect("Failed to create a new vertex draw shader");
         program_wrapper::compile_shader(gl, &v_shader, include_str!("shaders/draw_vertex.glsl")).expect("Draw Vertex Compile");
@@ -106,7 +106,7 @@ impl AniSS {
     fn get_canvas(&self) -> HtmlCanvasElement {
         JsValue::from(self.gl.canvas().unwrap())
             .dyn_into::<HtmlCanvasElement>()
-            .expect("WebGLRenderingContext was expected to come from canvas")
+            .expect("WebGl2RenderingContext was expected to come from canvas")
     }
 
     fn bind_tex_data(&self, texture: Option<&WebGlTexture>, width: i32, height: i32, texture_data: &[u8]) -> Result<(), JsValue> {
@@ -236,7 +236,7 @@ impl AniSS {
                         return;
                     }
                     self.updated = true;
-                    gl.tex_image_2d_with_u32_and_u32_and_image(
+                    gl.tex_image_2d_with_u32_and_u32_and_html_image_element(
                         GL::TEXTURE_2D,
                         0,
                         GL::RGBA as i32,
@@ -246,7 +246,7 @@ impl AniSS {
                     ).unwrap();
                 },
                 AniSSSource::CanvasSource(src) => {
-                    gl.tex_image_2d_with_u32_and_u32_and_canvas(
+                    gl.tex_image_2d_with_u32_and_u32_and_html_canvas_element(
                         GL::TEXTURE_2D,
                         0,
                         GL::RGBA as i32,
@@ -256,7 +256,7 @@ impl AniSS {
                     ).unwrap();
                 },
                 AniSSSource::VideoSource(src) => {
-                    gl.tex_image_2d_with_u32_and_u32_and_video(
+                    gl.tex_image_2d_with_u32_and_u32_and_html_video_element(
                         GL::TEXTURE_2D,
                         0,
                         GL::RGBA as i32,
@@ -353,7 +353,7 @@ impl AniSS {
         gl.use_program(Some(&self.draw_prog.program));
         bind_attribute(gl, Some(&self.vbo), self.draw_prog.attributes["aPos"], 2);
         bind_tex(gl, render_texture, 0);
-        gl.uniform1i(self.draw_prog.uniforms.get("texture"), 0);
+        gl.uniform1i(self.draw_prog.uniforms.get("drawTexture"), 0);
         gl.draw_arrays(GL::TRIANGLES, 0, 6);
         true
     }

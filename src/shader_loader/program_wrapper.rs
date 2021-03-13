@@ -4,7 +4,7 @@ extern crate js_sys;
 extern crate log;
 
 use wasm_bindgen::prelude::*;
-use web_sys::{WebGlRenderingContext as GL, WebGlShader, WebGlProgram, WebGlRenderingContext, WebGlUniformLocation, WebGlActiveInfo};
+use web_sys::{WebGl2RenderingContext as GL, WebGlShader, WebGlProgram, WebGl2RenderingContext, WebGlUniformLocation, WebGlActiveInfo};
 use std::{error::Error, error, fmt};
 use super::Program;
 use std::collections::HashMap;
@@ -55,7 +55,7 @@ pub struct ProgramWrapper {
 }
 
 pub fn get_uniforms_attributes(
-    gl: &WebGlRenderingContext,
+    gl: &WebGl2RenderingContext,
     gl_program: &WebGlProgram)
     -> Result<(HashMap<String, WebGlUniformLocation>, HashMap<String, u32>), String> {
     let mut uniforms: HashMap<String, WebGlUniformLocation> = HashMap::new();
@@ -109,14 +109,14 @@ pub fn get_uniforms_attributes(
     Ok((uniforms, attributes))
 }
 
-/// Given a [WebGlRenderingContext] and new shader with source, compiles the shader. Returns a
+/// Given a [WebGl2RenderingContext] and new shader with source, compiles the shader. Returns a
 /// result, unit if successful, otherwise error.
 ///
 /// # Arguments
-/// * `gl` - A [WebGlRenderingContext] reference to compile to
+/// * `gl` - A [WebGl2RenderingContext] reference to compile to
 /// * `shader` - The actual shader being compiled
 /// * `source` - The source to compile the shader with
-pub fn compile_shader(gl: &WebGlRenderingContext, shader: &WebGlShader, src: &str) -> Result<(), String> {
+pub fn compile_shader(gl: &WebGl2RenderingContext, shader: &WebGlShader, src: &str) -> Result<(), String> {
     gl.shader_source(&shader, src);
     gl.compile_shader(&shader);
     if gl.get_shader_parameter(&shader, GL::COMPILE_STATUS).is_falsy() {
@@ -128,13 +128,13 @@ pub fn compile_shader(gl: &WebGlRenderingContext, shader: &WebGlShader, src: &st
 /// Implementation for the ProgramWrapper struct that holds all the information for a single hook
 /// to pass in the rendering flow
 impl ProgramWrapper {
-    /// Given a [WebGlRenderingContext] and parsed program shader, creates a new ProgramWrapper
+    /// Given a [WebGl2RenderingContext] and parsed program shader, creates a new ProgramWrapper
     /// with associated vertex/fragment shaders and returns errors
     ///
     /// # Arguments
-    /// * `gl` - A [WebGlRenderingContext] usually from a canvas element
+    /// * `gl` - A [WebGl2RenderingContext] usually from a canvas element
     /// * `program` - Parsed program read from string via [Program::read_str]
-    pub fn new(gl: &WebGlRenderingContext, program: &Program) -> Result<ProgramWrapper, Box<dyn Error>> {
+    pub fn new(gl: &WebGl2RenderingContext, program: &Program) -> Result<ProgramWrapper, Box<dyn Error>> {
         let gl_program: WebGlProgram = gl.create_program().ok_or(Box::new(WrapperError::CompileError))?;
         let vertex_shader: WebGlShader = Self::create_shader(gl, GL::VERTEX_SHADER, program)?;
         let fragment_shader: WebGlShader = Self::create_shader(gl, GL::FRAGMENT_SHADER, program)?;
@@ -166,13 +166,13 @@ impl ProgramWrapper {
     /// Creates a WebGlShader given a shader type and program
     ///
     /// # Arguments
-    /// * `gl` - The WebGlRenderingContext
+    /// * `gl` - The WebGl2RenderingContext
     /// * `shader_type` - The type of the shader (one of [GL::VERTEX_SHADER] or [GL::FRAGMENT_SHADER])
     /// * `program` - The program to build the shader from
     ///
-    /// [GL]: WebGlRenderingContext
+    /// [GL]: WebGl2RenderingContext
     pub fn create_shader(
-        gl: &WebGlRenderingContext,
+        gl: &WebGl2RenderingContext,
         shader_type: u32,
         program: &Program) -> Result<WebGlShader, Box<dyn Error>> {
         let shader = gl
@@ -190,7 +190,7 @@ impl ProgramWrapper {
     }
 
     fn compile_vertex_shader(
-        gl: &WebGlRenderingContext,
+        gl: &WebGl2RenderingContext,
         shader: &WebGlShader,
         program: &Program) -> Result<(), Box<dyn Error>> {
         let mut src = String::from(include_str!("../shaders/vertex_template.glsl"));
@@ -200,7 +200,7 @@ impl ProgramWrapper {
             if binding == "HOOKED" {
                 continue;
             }
-            bind_mount.push_str(format!("varying vec2 {}_pos;\n", binding).as_str());
+            bind_mount.push_str(format!("out vec2 {}_pos;\n", binding).as_str());
             bind.push_str(format!("{}_pos = vec2((aPos + 1.0) / 2.0);\n", binding).as_str());
         }
         src = src.replace("//!BINDMOUNT", bind_mount.as_str()).replace("//!BIND", bind.as_str());
@@ -212,7 +212,7 @@ impl ProgramWrapper {
     }
 
     fn compile_fragment_shader(
-        gl: &WebGlRenderingContext,
+        gl: &WebGl2RenderingContext,
         shader: &WebGlShader,
         program: &Program,
         hook: &str) -> Result<(), Box<dyn Error>> {
@@ -223,11 +223,12 @@ impl ProgramWrapper {
             if binding == "HOOKED" {
                 continue;
             }
-            hook_mount.push_str(format!("uniform vec2 {b}_pt;\nuniform vec2 {b}_size;\nuniform sampler2D _{b}_tex;\nvarying vec2 {b}_pos;\n", b = binding).as_str());
-            hook_macros.push_str(format!("vec4 {b}_tex(vec2 pos) {{ return texture2D(_{b}_tex, pos); }}\n", b = binding).as_str());
+            hook_mount.push_str(format!("uniform vec2 {b}_pt;\nuniform vec2 {b}_size;\nuniform sampler2D _{b}_tex;\nin vec2 {b}_pos;\n", b = binding).as_str());
+            hook_macros.push_str(format!("vec4 {b}_tex(vec2 pos) {{ return texture(_{b}_tex, pos); }}\nvec4 {b}_texOff(vec2 pos) {{ return texture(_{b}_tex, pos * {b}_pt); }}\n", b = binding).as_str());
         }
         hook_mount.push_str(hook_macros.as_str());
-        src = src.replace("//!HOOKMOUNT", hook_mount.as_str()).replace("//!HOOK", hook);
+        src = src.replace("//!HOOKMOUNT", hook_mount.as_str())
+            .replace("//!HOOK", hook);
         compile_shader(gl, shader, src.as_str())
             .map_err(|msg| {
                 error!("Shader Compile Error: {}\nFragment Shader: {}", msg, src);

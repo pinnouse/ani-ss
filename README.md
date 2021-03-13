@@ -20,7 +20,7 @@ After importing (like as follows in the `js/init.js` file):
 import { AniSS } from '../pkg';
 ...
 ```
-To use Ani-SS, you must provide a WebGlRenderingContext which can be obtained from a `<canvas>` element.
+To use Ani-SS, you must provide a WebGl2RenderingContext which can be obtained from a `<canvas>` element.
 
 `index.html`
 ```html
@@ -53,7 +53,7 @@ aniSS.addProgram('...') // Pass the program as a string, replacing '...' with th
 ```
 
 ### Known Bugs/Inconsistencies
-- *Shaders with `[i.y * 2 + i.x]` indexing of a texture do not compile on WebGL so manual adjustments to explicitly state the indices is required
+- *Original shaders do not necessarily work, shaders from my patch at ([https://github.com/pinnouse/Anime4K](https://github.com/pinnouse/Anime4K)) should work - shaders provided as is if you come across issues, open a new issue in this repository
 - Not sure if implementation of hooks or shaders themselves, but Anime4K shaders seem to lighten/increase luma of the render
 - GLSL: `szexpr` with `WIDTH` and `HEIGHT` are disregarded and the last parsable float is stored as the scale (looking to turn it into a multiplier/scale field)
 

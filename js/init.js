@@ -33,7 +33,7 @@ const startup = function() {
     const vid = document.getElementById('vid')
 
     const canvas = document.getElementById('canv')
-    const gl = canvas.getContext('webgl')
+    const gl = canvas.getContext('webgl2')
 
     vid.addEventListener('canplaythrough', function() {
         vid.play()
