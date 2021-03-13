@@ -5,14 +5,14 @@ const WasmPackPlugin = require('@wasm-tool/wasm-pack-plugin');
 
 module.exports = {
     mode: 'development',
-    entry: './index.js',
+    entry: './www/index.js',
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'bundle.js',
     },
     plugins: [
         new HtmlWebPackPlugin({
-            template: "./index.html"
+            template: "./www/index.html"
         }),
         new WasmPackPlugin({
             crateDirectory: path.resolve(__dirname, '.')

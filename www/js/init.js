@@ -1,4 +1,4 @@
-import { AniSS } from '../pkg';
+import { AniSS } from '../../pkg';
 
 let aniSS = null
 

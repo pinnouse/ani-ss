@@ -56,6 +56,3 @@ aniSS.addProgram('...') // Pass the program as a string, replacing '...' with th
 - *Original shaders do not necessarily work, shaders from my patch at ([https://github.com/pinnouse/Anime4K](https://github.com/pinnouse/Anime4K)) should work - shaders provided as is if you come across issues, open a new issue in this repository
 - Not sure if implementation of hooks or shaders themselves, but Anime4K shaders seem to lighten/increase luma of the render
 - GLSL: `szexpr` with `WIDTH` and `HEIGHT` are disregarded and the last parsable float is stored as the scale (looking to turn it into a multiplier/scale field)
-
-### Working Example
-Check out the `js/shader_modifications.diff` for the diff modifications required for the `Anime4K_Upscale_CNN_M_x2_Deblur.glsl` shader to be usable.

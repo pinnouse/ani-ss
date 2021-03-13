@@ -2,7 +2,7 @@
   "name": "ani-ss",
   "version": "1.0.0",
   "description": "Anime4k applied in web assembly.",
-  "main": "index.js",
+  "main": "www/index.js",
   "directories": {
     "example": "examples"
   },
@@ -16,7 +16,7 @@
     "url": "git+https://github.com/pinnouse/ani-ss.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "pinnouse",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/pinnouse/ani-ss/issues"
