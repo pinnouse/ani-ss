@@ -15,9 +15,9 @@ This is where Ani-SS fits in - arbitrary mpv shaders would theoretically apply t
 
 ## Usage `wasm`
 The `pkg` directory available after building should be where all your required files reside.
-After importing (like as follows in the `js/init.js` file):
+After importing (like as follows in the `www/js/init.js` file):
 ```js
-import { AniSS } from '../pkg';
+import { AniSS } from '../../pkg';
 ...
 ```
 To use Ani-SS, you must provide a WebGl2RenderingContext which can be obtained from a `<canvas>` element.
@@ -29,7 +29,7 @@ To use Ani-SS, you must provide a WebGl2RenderingContext which can be obtained f
 `<your_file>.js`
 ```js
 const canvas = document.getElementById('canv');
-const gl = canvas.getContext('webgl');
+const gl = canvas.getContext('webgl2');
 ```
 
 Now ready to use:
@@ -53,6 +53,5 @@ aniSS.addProgram('...') // Pass the program as a string, replacing '...' with th
 ```
 
 ### Known Bugs/Inconsistencies
-- *Original shaders do not necessarily work, shaders from my patch at ([https://github.com/pinnouse/Anime4K](https://github.com/pinnouse/Anime4K)) should work - shaders provided as is if you come across issues, open a new issue in this repository
 - Not sure if implementation of hooks or shaders themselves, but Anime4K shaders seem to lighten/increase luma of the render
-- GLSL: `szexpr` with `WIDTH` and `HEIGHT` are disregarded and the last parsable float is stored as the scale (looking to turn it into a multiplier/scale field)
+- *GLSL: `szexpr` with `WIDTH` and `HEIGHT` are disregarded and the last parsable float is stored as the scale (looking to turn it into a multiplier/scale field)
