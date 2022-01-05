@@ -92,7 +92,7 @@ impl AniSS {
         gl.attach_shader(&program, &f_shader);
         gl.link_program(&program);
         if gl.get_program_parameter(&program, GL::LINK_STATUS).is_falsy() {
-            panic!(gl.get_program_info_log(&program).expect("Failed to link draw program"))
+            panic!("{}", gl.get_program_info_log(&program).expect("Failed to link draw program"))
         }
         let (uniforms, attributes) = program_wrapper::get_uniforms_attributes(gl, &program)
             .expect("Failed to get uniforms and attributes from draw program");
